@@ -4,32 +4,24 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      component: import('../views/login/index.vue')
-    },
-    {
       path: '/login',
-      component: import('../views/login/index.vue')
+      component: () => import('../views/login.vue')
     },
     {
       path: '/registry',
-      component: import('../views/registry/index.vue')
+      component: () => import('../views/registry.vue')
     },
     {
       path: '/',
-      component: import('../views/index/index.vue')
-    },
-    {
-      path: '/index',
-      component: import('../views/index/index.vue'),
+      component: () => import('../views/index/index.vue'),
       children: [
         {
           path: '',
-          component: import('../views/index/pages/file.vue')
+          component: () => import('../views/index/save.vue')
         },
         {
-          path: 'file2',
-          component: import('../views/index/pages/file2.vue')
+          path: 'index/translate',
+          component: () => import('../views/index/translate.vue')
         }
       ]
     }
