@@ -31,11 +31,13 @@
     </el-aside>
 
     <router-view></router-view>
+    <upload></upload>
   </el-container>
 </template>
 
 <script lang="ts" setup>
 import { Document, Menu as IconMenu, Location, Setting } from '@element-plus/icons-vue'
+import upload from '../../components/upload.vue'
 
 const handleOpen = (key: string, keyPath: string[]) => {
   console.log(key, keyPath)

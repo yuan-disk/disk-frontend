@@ -15,6 +15,17 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [vue()]
+    plugins: [
+      vue(),
+      {
+        test: /\.worker\.js$/,
+        use: [
+          {
+            loader: 'worker-loader',
+            options: { inline: true, fallback: false }
+          }
+        ]
+      }
+    ]
   }
 })

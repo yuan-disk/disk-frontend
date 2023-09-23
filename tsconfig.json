@@ -1,6 +1,6 @@
-// tsconfig.json
 {
-  "compilerOptions": {
+ 
+   "compilerOptions": {
     // ...
     "types": ["element-plus/global"]
   }
