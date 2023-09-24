@@ -25,11 +25,10 @@ async function createChuck(file, index, size) {
         start,
         end,
         index,
-        hash: spark.end(),
-        binary: e.target.result
+        hash: spark.end()
       })
     }
 
-    fileReader.readAsBinaryString(file.slice(start, end))
+    fileReader.readAsArrayBuffer(file.slice(start, end))
   })
 }

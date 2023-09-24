@@ -59,7 +59,17 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 
-  ipcMain.on('upload-file', uploadFile)
+  const Store = require('electron-store')
+  var store = new Store()
+
+  ipcMain.on('setStore', (_, key, value) => {
+    store.set(key, value)
+  })
+
+  ipcMain.on('getStore', (_, key) => {
+    let value = store.get(key)
+    _.returnValue = value || ''
+  })
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

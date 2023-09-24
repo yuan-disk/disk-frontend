@@ -2,7 +2,7 @@
   <div class="container">
     <div class="center">
       <div class="project-name">原盘</div>
-      <el-form :model="registerForm" :rules="rules" label-width="80px" label-position="">
+      <el-form ref="registerRef" :model="registerForm" :rules="rules" label-width="80px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model.trim="registerForm.username" auto-complete="off"></el-input>
         </el-form-item>
@@ -17,7 +17,7 @@
           ></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm">原盘！注册！</el-button>
+          <el-button type="primary" @click="submitForm(registerRef)">原盘！注册！</el-button>
           <router-link to="/login">已有账号？转到登录</router-link>
         </el-form-item>
       </el-form>
@@ -26,12 +26,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
+import router from '../router/index.js'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
-const registerForm = ref({
+const registerRef = reactive()
+
+const registerForm = reactive({
   username: '',
   password: '',
-  confirmPassword: ''
+  checkPassword: ''
 })
 
 const rules = ref({
@@ -43,7 +48,7 @@ const rules = ref({
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 5, message: '密码长度必须大于4位', trigger: 'blur' }
   ],
-  confirmPassword: [
+  checkPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
@@ -58,14 +63,30 @@ const rules = ref({
   ]
 })
 
-const submitForm = () => {
-  const valid = registerForm.value.$refs.validate()
-  if (valid) {
-    alert('提交成功!')
-  } else {
-    console.log('error submit!!')
-    return false
-  }
+const submitForm = async (formEl) => {
+  if (!formEl) return
+  await formEl.validate((valid) => {
+    if (valid) {
+      axios
+        .post('http://119.23.244.10:9999/user/register')
+        .then((response) => {
+          if (response.data.code === 200) {
+            ElMessage('注册成功')
+            router.push({
+              path: '/login'
+            })
+          } else {
+            ElMessage(response.data.message)
+          }
+        })
+        .catch((error) => {
+          console.log(error)
+          ElMessage('未知错误')
+        })
+    } else {
+      console.log('error submit!!')
+    }
+  })
 }
 </script>
 

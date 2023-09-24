@@ -8,26 +8,83 @@
   </el-upload>
 </template>
 
-<script setup lang="ts">
-const CHUNK_SIZE = 1024 * 1024 * 4
+<script setup>
+import axios from 'axios'
+
+const CHUNK_SIZE = 1024 * 1024 * 2
 const CUT_THREAD_COUNT = 8
+const UPLOAD_THREAD_COUNT = 8
 
 async function updateFile(params) {
   let file = params.file
   var chunks = await cutFile(file)
+  console.log(chunks)
 
-  console.log(file)
+  await upload(file, chunks)
+  console.log('upload over')
+  axios.post('http://119.23.244.10:9999/file/merge/' + file.name, '', {
+    headers: {
+      Authentication:
+        'Barer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzA0NjkzNTI0ODA3OTA1MjgxIiwiZXhwIjoxNjk4MDQzMTIxLCJpYXQiOjE2OTU0NTExMjF9.gcEwUtrw01WGAdbtCoZwVD5K8TgW05jrk56xtdh248Q'
+    }
+  })
+}
 
-  window.electronAPI.uploadFile(file.name, chunks)
+async function upload(file, chunks) {
+  var index = chunks.length - 1
 
-  // axios
-  //   .post('https://localhost:8088/trace', {
-  //     filename: file.name,
-  //     chunk: chunks[0]
-  //   })
-  //   .then((response) => {
-  //     console.log(response)
-  //   })
+  function getIndex() {
+    return index--
+  }
+
+  let proms = []
+  for (let i = 0; i < UPLOAD_THREAD_COUNT; i++) {
+    proms.push(recursiveUpload(getIndex, file, chunks, -1))
+  }
+  await Promise.all(proms)
+}
+
+function recursiveUpload(getIndex, file, chunks, error_index) {
+  return new Promise((resolve) => {
+    let cur_index = error_index
+    if (cur_index < 0) {
+      cur_index = getIndex()
+      if (cur_index < 0) {
+        resolve(undefined)
+        return
+      }
+    }
+
+    let chunk = chunks[cur_index]
+    console.log('axios' + cur_index + ' with length' + (chunk.end - chunk.start))
+
+    let slicee = file.slice(chunk.start, chunk.end)
+    let filename = file.name
+    let form = new FormData()
+    form.append('checkSum', chunk.hash)
+    form.append('chunkNum', cur_index)
+    form.append('chunk', new File([slicee], filename))
+    form.append('totalChunkNum', chunks.length)
+    axios
+      .post('http://119.23.244.10:9999/file/upload', form, {
+        headers: {
+          Authentication:
+            'Barer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzA0NjkzNTI0ODA3OTA1MjgxIiwiZXhwIjoxNjk4MDQzMTIxLCJpYXQiOjE2OTU0NTExMjF9.gcEwUtrw01WGAdbtCoZwVD5K8TgW05jrk56xtdh248Q'
+        }
+      })
+      .then(async () => {
+        console.log('axios', cur_index, 'over')
+        await recursiveUpload(getIndex, file, chunks, -1)
+        resolve(undefined)
+      })
+      .catch(async (error) => {
+        console.log('axios', cur_index, 'error')
+        console.log(error)
+
+        await recursiveUpload(getIndex, file, chunks, cur_index)
+        resolve(undefined)
+      })
+  })
 }
 
 function cutFile(file) {
@@ -51,13 +108,6 @@ function cutFile(file) {
         type: 'module'
       })
 
-      worker.postMessage({
-        file,
-        start,
-        end,
-        size: CHUNK_SIZE
-      })
-
       worker.onmessage = (e) => {
         for (let i = start; i < end; ++i) {
           chunks[i] = e.data[i - start]
@@ -69,6 +119,13 @@ function cutFile(file) {
           resolve(chunks)
         }
       }
+
+      worker.postMessage({
+        file,
+        start,
+        end,
+        size: CHUNK_SIZE
+      })
     }
   })
 }

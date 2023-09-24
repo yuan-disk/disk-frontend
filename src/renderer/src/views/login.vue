@@ -2,7 +2,13 @@
   <div class="container">
     <div class="center">
       <div class="project-name">原盘</div>
-      <el-form :model="loginForm" :rules="rules" label-width="80px" label-position="">
+      <el-form
+        ref="loginFormRef"
+        :model="loginForm"
+        :rules="rules"
+        label-width="80px"
+        label-position=""
+      >
         <el-form-item label="用户名" prop="username">
           <el-input v-model.trim="loginForm.username" auto-complete="off"></el-input>
         </el-form-item>
@@ -10,7 +16,7 @@
           <el-input v-model.trim="loginForm.password" type="password" show-password></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm">原盘！启动！</el-button>
+          <el-button type="primary" @click="submitForm(loginFormRef)">启动！</el-button>
           <router-link to="/registry">没有账号？转到注册</router-link>
         </el-form-item>
       </el-form>
@@ -19,9 +25,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import { reactive, ref } from 'vue'
+import router from '../router/index.js'
 
-const loginForm = ref({
+const loginFormRef = reactive()
+
+const loginForm = reactive({
   username: '',
   password: ''
 })
@@ -37,14 +48,29 @@ const rules = ref({
   ]
 })
 
-const submitForm = () => {
-  const valid = loginForm.value.$refs.validate()
-  if (valid) {
-    alert('提交成功!')
-  } else {
-    console.log('error submit!!')
-    return false
-  }
+const submitForm = async (formEl) => {
+  if (!formEl) return
+  await formEl.validate((valid) => {
+    if (valid) {
+      axios
+        .post('http://119.23.244.10:9999/user/login', loginForm)
+        .then((response) => {
+          if (response.data.code === 200) {
+            window.store.ipcRenderer.set('token', response.data.data.token)
+            router.push({
+              path: '/'
+            })
+          } else {
+            ElMessage(error.response.data.message)
+          }
+        })
+        .catch((error) => {
+          ElMessage('未知错误')
+        })
+    } else {
+      ElMessage('输入错误')
+    }
+  })
 }
 </script>
 
