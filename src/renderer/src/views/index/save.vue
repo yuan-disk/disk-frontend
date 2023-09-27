@@ -43,6 +43,7 @@ import { ref } from 'vue'
 import upload from '../../components/upload.vue'
 import { ElMessage } from 'element-plus'
 import { Sort } from '@element-plus/icons-vue'
+import server from '../../js/request'
 
 const isSelectAll = ref(false)
 const notSelectAllFolders = ref(false)

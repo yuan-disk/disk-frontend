@@ -2,35 +2,34 @@
   <el-container>
     <el-aside>
       <el-menu
-        default-active="/index/save"
+        default-active="/"
         :collapse="true"
         @open="handleOpen"
         @close="handleClose"
         router="true"
       >
-        <el-menu-item index="/">
+        <el-menu-item class="menu-fix" index="/">
           <el-icon><location /></el-icon>
-          <template #title>Navigator One</template>
+          <div class="menu-title-fix">文件</div>
         </el-menu-item>
 
-        <el-menu-item index="/index/translate/">
+        <el-menu-item class="menu-fix" index="/index/share/">
           <el-icon><icon-menu /></el-icon>
-          <template #title>传输</template>
+          <div class="menu-title-fix">共享</div>
         </el-menu-item>
 
-        <el-menu-item index="/">
+        <el-menu-item class="menu-fix" index="/index/translate/">
           <el-icon><document /></el-icon>
-          <template #title>Navigator Three</template>
+          <div class="menu-title-fix">传输</div>
         </el-menu-item>
 
-        <el-menu-item index="/login">
+        <el-menu-item class="menu-fix" index="/login">
           <el-icon><setting /></el-icon>
-          <template #title>Navigator Four</template>
+          <div class="menu-title-fix">传输</div>
         </el-menu-item>
       </el-menu>
     </el-aside>
-
-    <router-view></router-view>
+    <keep-alive :include="['save', 'translate', 'share']"> <router-view></router-view> </keep-alive>
   </el-container>
 </template>
 
@@ -46,6 +45,16 @@ const handleClose = (key: string, keyPath: string[]) => {
 </script>
 
 <style scoped>
+.menu-title-fix {
+  line-height: normal;
+  display: block;
+}
+
+.menu-fix {
+  margin-bottom: 5px;
+  flex-direction: column;
+  justify-content: center;
+}
 .el-aside {
   width: var(--el-aside-width, 60);
 }

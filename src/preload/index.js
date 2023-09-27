@@ -19,6 +19,10 @@ if (process.contextIsolated) {
         get(key) {
           const resp = ipcRenderer.sendSync('getStore', key)
           return resp
+        },
+
+        del: (key) => {
+          ipcRenderer.send('delStore', key)
         }
       }
     }

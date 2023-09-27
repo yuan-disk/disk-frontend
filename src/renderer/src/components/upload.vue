@@ -6,28 +6,38 @@
       <div class="el-upload__tip">jpg/png files with a size less than 500kb</div>
     </template>
   </el-upload>
+  <el-progress :percentage="(progress * 100) / total" />
 </template>
 
 <script setup>
-import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import server from '../js/request.js'
+import { ref } from 'vue'
+import bus from '../js/event'
 
 const CHUNK_SIZE = 1024 * 1024 * 2
 const CUT_THREAD_COUNT = 8
 const UPLOAD_THREAD_COUNT = 8
 
+const MAX_TRY_COUNT = 8
+
+const progress = ref(0)
+const total = ref(0)
+
 async function updateFile(params) {
   let file = params.file
+  bus.emit('upload-file', file)
+  total.value = file.size
+  progress.value = 0
   var chunks = await cutFile(file)
   console.log(chunks)
 
-  await upload(file, chunks)
-  console.log('upload over')
-  axios.post('http://119.23.244.10:9999/file/merge/' + file.name, '', {
-    headers: {
-      Authentication:
-        'Barer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzA0NjkzNTI0ODA3OTA1MjgxIiwiZXhwIjoxNjk4MDQzMTIxLCJpYXQiOjE2OTU0NTExMjF9.gcEwUtrw01WGAdbtCoZwVD5K8TgW05jrk56xtdh248Q'
-    }
-  })
+  if (await upload(file, chunks)) {
+    console.log('upload over')
+    server.post('/file/merge/' + file.name)
+  } else {
+    ElMessage('upload fail')
+  }
 }
 
 async function upload(file, chunks) {
@@ -41,48 +51,65 @@ async function upload(file, chunks) {
   for (let i = 0; i < UPLOAD_THREAD_COUNT; i++) {
     proms.push(recursiveUpload(getIndex, file, chunks, -1))
   }
-  await Promise.all(proms)
+
+  for (let i = 0; i < proms.length; ++i) {
+    let success = await proms[i]
+    if (!success) {
+      return false
+    }
+  }
+
+  return true
 }
 
-function recursiveUpload(getIndex, file, chunks, error_index) {
+function recursiveUpload(getIndex, file, chunks, error_index = -1, try_count = 0) {
   return new Promise((resolve) => {
     let cur_index = error_index
     if (cur_index < 0) {
       cur_index = getIndex()
       if (cur_index < 0) {
-        resolve(undefined)
+        resolve(true)
         return
       }
+    } else if (try_count > MAX_TRY_COUNT) {
+      resolve(false)
+      return
     }
 
     let chunk = chunks[cur_index]
-    console.log('axios' + cur_index + ' with length' + (chunk.end - chunk.start))
+    let chunk_size = chunk.end - chunk.start
+    console.log('axios' + cur_index + ' with length' + chunk_size)
 
     let slicee = file.slice(chunk.start, chunk.end)
     let filename = file.name
     let form = new FormData()
+
+    let last_progress = 0
+    form.append('fileName', filename)
     form.append('checkSum', chunk.hash)
     form.append('chunkNum', cur_index)
     form.append('chunk', new File([slicee], filename))
     form.append('totalChunkNum', chunks.length)
-    axios
-      .post('http://119.23.244.10:9999/file/upload', form, {
-        headers: {
-          Authentication:
-            'Barer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNzA0NjkzNTI0ODA3OTA1MjgxIiwiZXhwIjoxNjk4MDQzMTIxLCJpYXQiOjE2OTU0NTExMjF9.gcEwUtrw01WGAdbtCoZwVD5K8TgW05jrk56xtdh248Q'
+    console.log(slicee)
+    server
+      .post('/file', form, {
+        onUploadProgress: (e) => {
+          last_progress = e.loaded
+          if (e.loaded === e.total) {
+            progress.value += e.total
+          } else {
+            progress.value = progress.value - last_progress + e.loaded
+          }
         }
       })
-      .then(async () => {
-        console.log('axios', cur_index, 'over')
-        await recursiveUpload(getIndex, file, chunks, -1)
-        resolve(undefined)
+      .then(async (response) => {
+        console.log('axios', cur_index, 'over', response)
+        resolve(await recursiveUpload(getIndex, file, chunks))
       })
       .catch(async (error) => {
-        console.log('axios', cur_index, 'error')
-        console.log(error)
+        console.log('axios', cur_index, 'error', error)
 
-        await recursiveUpload(getIndex, file, chunks, cur_index)
-        resolve(undefined)
+        resolve(await recursiveUpload(getIndex, file, chunks, cur_index, try_count + 1))
       })
   })
 }
@@ -104,7 +131,7 @@ function cutFile(file) {
         break
       }
 
-      const worker = new Worker('src/js/FileCutWorker.js', {
+      const worker = new Worker('src/js/cutfile.worker.js', {
         type: 'module'
       })
 

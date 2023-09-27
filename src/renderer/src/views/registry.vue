@@ -9,9 +9,9 @@
         <el-form-item label="密码" prop="password">
           <el-input v-model.trim="registerForm.password" type="password" show-password></el-input>
         </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item label="确认密码" prop="checkPassword">
           <el-input
-            v-model.trim="registerForm.confirmPassword"
+            v-model.trim="registerForm.checkPassword"
             type="password"
             show-password
           ></el-input>
@@ -28,8 +28,8 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import router from '../router/index.js'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import server from '../js/request'
 
 const registerRef = reactive()
 
@@ -42,7 +42,8 @@ const registerForm = reactive({
 const rules = ref({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9]*$/, message: '用户名只能包含数字和英文字符', trigger: 'blur' }
+    { pattern: /^[a-zA-Z]*$/, message: '用户名只能包含英文字符', trigger: 'blur' },
+    { min: 4, message: '用户名必须大于3位', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -52,7 +53,7 @@ const rules = ref({
     { required: true, message: '请再次输入密码', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        if (value !== registerForm.value.password) {
+        if (value !== registerForm.password) {
           callback(new Error('两次输入密码不一致!'))
         } else {
           callback()
@@ -67,8 +68,8 @@ const submitForm = async (formEl) => {
   if (!formEl) return
   await formEl.validate((valid) => {
     if (valid) {
-      axios
-        .post('http://119.23.244.10:9999/user/register')
+      server
+        .post('/user/register', registerForm)
         .then((response) => {
           if (response.data.code === 200) {
             ElMessage('注册成功')

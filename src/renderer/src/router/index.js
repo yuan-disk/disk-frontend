@@ -5,25 +5,38 @@ const router = createRouter({
   routes: [
     {
       path: '/login',
-      component: () => import('../views/login.vue')
+      component: () => import('../views/login.vue'),
+      name: 'login'
     },
     {
       path: '/registry',
-      component: () => import('../views/registry.vue')
+      component: () => import('../views/registry.vue'),
+      name: 'registry'
     },
     {
       path: '/',
+      redirect: '/index/save'
+    },
+    {
+      path: '/index',
       component: () => import('../views/index/index.vue'),
       meta: {
         requireAuth: true
       },
       children: [
         {
-          path: '',
-          component: () => import('../views/index/save.vue')
+          path: 'save',
+          component: () => import('../views/index/save.vue'),
+          name: 'save'
         },
         {
-          path: 'index/translate',
+          path: 'share',
+          component: () => import('../views/index/share.vue'),
+          name: 'share'
+        },
+        {
+          path: 'translate',
+          name: 'translate',
           component: () => import('../views/index/translate.vue')
         }
       ]
@@ -32,10 +45,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  console.log(to, from)
   if (to.matched.some((res) => res.meta.requireAuth)) {
     // 验证是否需要登陆
     var id = window.store.ipcRenderer.get('token')
-    if (id) {
+    if (id && id != '') {
       next()
     } else {
       next({

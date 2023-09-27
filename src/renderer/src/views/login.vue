@@ -25,10 +25,10 @@
 </template>
 
 <script setup>
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
 import router from '../router/index.js'
+import server from '../js/request'
 
 const loginFormRef = reactive()
 
@@ -52,8 +52,8 @@ const submitForm = async (formEl) => {
   if (!formEl) return
   await formEl.validate((valid) => {
     if (valid) {
-      axios
-        .post('http://119.23.244.10:9999/user/login', loginForm)
+      server
+        .post('/user/login', loginForm)
         .then((response) => {
           if (response.data.code === 200) {
             window.store.ipcRenderer.set('token', response.data.data.token)
