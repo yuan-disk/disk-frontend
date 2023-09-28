@@ -39,7 +39,7 @@
     </el-main>
   </el-container>
 </template>
-<script lang="ts" setup>
+<script setup>
 import { ref } from 'vue'
 import upload from '../../components/upload.vue'
 import folder from '../../components/folder.vue'
@@ -50,17 +50,17 @@ import { Sort } from '@element-plus/icons-vue'
 
 const isSelectAll = ref(false)
 const notSelectAllFolders = ref(false)
-const selectedFolders = ref<String[]>([])
+const selectedFolders = ref([])
 const selectMessage = ref('共n项')
 const allFolders = ['Shanghai', 'Beijing', 'Guangzhou', 'Shenzhen']
 const sortedMethod = ref('')
 
-const handleCommand = (command: Function) => {
+const handleCommand = (command) => {
   sortedMethod.value = command.toString()
   ElMessage(`click on item ${command}`)
 }
 
-const handleCheckAllChange = (val: boolean) => {
+const handleCheckAllChange = (val) => {
   selectedFolders.value = val ? allFolders : []
   notSelectAllFolders.value = false
 
@@ -71,7 +71,7 @@ const handleCheckAllChange = (val: boolean) => {
   }
 }
 
-const handleCheckedCitiesChange = (value: String[]) => {
+const handleCheckedCitiesChange = (value) => {
   const checkedCount = value.length
   isSelectAll.value = checkedCount === allFolders.length
   notSelectAllFolders.value = checkedCount > 0 && checkedCount < allFolders.length

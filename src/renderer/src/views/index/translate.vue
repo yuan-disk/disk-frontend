@@ -30,8 +30,10 @@ const total = ref(0)
 
 const files_to_upload = ref([
   {
-    name: 'hh',
-    size: 84329
+    name: 'index.html',
+    size: 84329,
+    status: 'waiting', // running | pause
+    download_bytes: 4327
   }
 ])
 

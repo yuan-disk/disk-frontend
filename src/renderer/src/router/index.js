@@ -38,6 +38,11 @@ const router = createRouter({
           path: 'translate',
           name: 'translate',
           component: () => import('../views/index/translate.vue')
+        },
+        {
+          path: 'settings',
+          name: 'settings',
+          component: () => import('../views/index/settings.vue')
         }
       ]
     }
@@ -48,7 +53,7 @@ router.beforeEach((to, from, next) => {
   console.log(to, from)
   if (to.matched.some((res) => res.meta.requireAuth)) {
     // 验证是否需要登陆
-    var id = window.store.ipcRenderer.get('token')
+    var id = window.store.get('token')
     if (id && id != '') {
       next()
     } else {

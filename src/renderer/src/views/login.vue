@@ -56,7 +56,7 @@ const submitForm = async (formEl) => {
         .post('/user/login', loginForm)
         .then((response) => {
           if (response.data.code === 200) {
-            window.store.ipcRenderer.set('token', response.data.data.token)
+            window.store.set('token', response.data.data.token)
             router.push({
               path: '/'
             })

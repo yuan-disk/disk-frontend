@@ -1,5 +1,5 @@
 <template>
-  <el-container>
+  <el-container style="height: 100%">
     <el-aside>
       <el-menu
         default-active="/"
@@ -23,13 +23,19 @@
           <div class="menu-title-fix">传输</div>
         </el-menu-item>
 
+        <el-menu-item class="spacer"> </el-menu-item>
+
+        <el-menu-item class="menu-fix" index="/index/settings">
+          <el-icon><setting /></el-icon>
+          <div class="menu-title-fix">设置</div>
+        </el-menu-item>
+
         <el-menu-item class="menu-fix" index="/login">
           <el-icon><setting /></el-icon>
-          <div class="menu-title-fix">传输</div>
+          <div class="menu-title-fix">登出</div>
         </el-menu-item>
       </el-menu>
     </el-aside>
-    <!-- <keep-alive :include="['save', 'translate', 'share']"> <router-view></router-view> </keep-alive> -->
     <router-view v-slot="{ Component }">
       <keep-alive>
         <component :is="Component" />
@@ -50,9 +56,14 @@ const handleClose = (key: string, keyPath: string[]) => {
 </script>
 
 <style scoped>
+.spacer {
+  flex: 1 1 auto;
+}
 .menu-title-fix {
   line-height: normal;
   display: block;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: small;
 }
 
 .menu-fix {
@@ -61,6 +72,6 @@ const handleClose = (key: string, keyPath: string[]) => {
   justify-content: center;
 }
 .el-aside {
-  width: var(--el-aside-width, 60);
+  width: var(--el-aside-width, 100);
 }
 </style>

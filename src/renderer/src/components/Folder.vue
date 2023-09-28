@@ -6,7 +6,7 @@
 <script setup>
 import server from '../js/request'
 
-const token = window.store.ipcRenderer.get('token')
+const token = window.store.get('token')
 
 const file = {
   id: '651449510b5128468439a475',
@@ -34,8 +34,6 @@ function download() {
       }
     )
     .then((response) => {
-      console.log(response)
-      console.log(response.data.size)
       window.core.writeFileByArrayBuffer(file.fileName, response.data)
     })
 }
