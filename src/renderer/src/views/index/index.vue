@@ -29,7 +29,12 @@
         </el-menu-item>
       </el-menu>
     </el-aside>
-    <keep-alive :include="['save', 'translate', 'share']"> <router-view></router-view> </keep-alive>
+    <!-- <keep-alive :include="['save', 'translate', 'share']"> <router-view></router-view> </keep-alive> -->
+    <router-view v-slot="{ Component }">
+      <keep-alive>
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
   </el-container>
 </template>
 

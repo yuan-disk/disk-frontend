@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-
+const { Buffer } = require('buffer')
 // Custom APIs for renderer
 const api = {}
 
@@ -27,9 +27,16 @@ if (process.contextIsolated) {
       }
     }
 
+    const coreHandler = {
+      writeFileByArrayBuffer: (filename, data) => {
+        ipcRenderer.send('writeFile', filename, Buffer.from(data))
+      }
+    }
+
     contextBridge.exposeInMainWorld('store', electronHandler)
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('core', coreHandler)
   } catch (error) {
     console.error(error)
   }

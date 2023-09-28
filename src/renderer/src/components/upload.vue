@@ -131,7 +131,7 @@ function cutFile(file) {
         break
       }
 
-      const worker = new Worker('src/js/cutfile.worker.js', {
+      const worker = new Worker('/src/js/cutfile.worker.js', {
         type: 'module'
       })
 

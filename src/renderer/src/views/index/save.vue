@@ -34,16 +34,19 @@
       <el-checkbox-group v-model="selectedFolders" @change="handleCheckedCitiesChange">
         <el-checkbox v-for="city in allFolders" :key="city" :label="city">{{ city }}</el-checkbox>
       </el-checkbox-group>
-      <upload></upload>
+      <upload />
+      <folder />
     </el-main>
   </el-container>
 </template>
 <script lang="ts" setup>
 import { ref } from 'vue'
 import upload from '../../components/upload.vue'
+import folder from '../../components/folder.vue'
+
+import bus from '../../js/event'
 import { ElMessage } from 'element-plus'
 import { Sort } from '@element-plus/icons-vue'
-import server from '../../js/request'
 
 const isSelectAll = ref(false)
 const notSelectAllFolders = ref(false)

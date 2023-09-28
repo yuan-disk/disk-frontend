@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { error, log } from 'console'
+import { ElMessage } from 'element-plus'
 
 function createWindow() {
   // Create the browser window.
@@ -72,6 +74,14 @@ app.whenReady().then(() => {
 
   ipcMain.on('delStore', (_, key) => {
     store.delete(key)
+  })
+
+  const fs = require('fs')
+
+  ipcMain.on('writeFile', (_, filename, data) => {
+    fs.writeFile(filename, data, (err) => {
+      ElMessage('write error', err)
+    })
   })
 })
 
