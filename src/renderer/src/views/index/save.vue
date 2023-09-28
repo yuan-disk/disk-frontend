@@ -12,7 +12,7 @@
           >
         </el-col>
         <el-col :span="14"></el-col>
-        <el-col :span="5">
+        <el-col :span="3">
           <el-dropdown @command="handleCommand" class="sort-fix">
             <span class="el-dropdown-link sort-span-fix"
               ><el-icon class="el-icon--right"><Sort /></el-icon> 按{{ sortedMethod }}排序
@@ -29,12 +29,25 @@
             </template>
           </el-dropdown>
         </el-col>
+
+        <el-col :span="2"> <el-button @click="getFileList">Refresh</el-button></el-col>
       </el-row>
 
       <el-checkbox-group v-model="selectedFolders" @change="handleCheckedCitiesChange">
         <el-checkbox v-for="city in allFolders" :key="city" :label="city">{{ city }}</el-checkbox>
       </el-checkbox-group>
       <upload />
+
+      <el-table :data="fileList" style="width: 100%">
+        <el-table-column prop="fileName" label="filename" width="180" />
+        <el-table-column prop="size" label="size" width="180" />
+        <el-table-column label="Operation">
+          <template #default="scope">
+            <el-button @click.prevent="downloadRow(scope.row)">下载</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
       <folder />
     </el-main>
   </el-container>
@@ -44,9 +57,9 @@ import { ref } from 'vue'
 import upload from '../../components/upload.vue'
 import folder from '../../components/folder.vue'
 
-import bus from '../../js/event'
 import { ElMessage } from 'element-plus'
 import { Sort } from '@element-plus/icons-vue'
+import server from '../../js/request'
 
 const isSelectAll = ref(false)
 const notSelectAllFolders = ref(false)
@@ -54,6 +67,37 @@ const selectedFolders = ref([])
 const selectMessage = ref('共n项')
 const allFolders = ['Shanghai', 'Beijing', 'Guangzhou', 'Shenzhen']
 const sortedMethod = ref('')
+
+const downloadRow = (file) => {
+  console.log(file)
+  ElMessage('开始下载' + file.fileName)
+  server
+    .post(
+      '/file/' + file.id,
+      { from: 0, to: file.chunks.length },
+      {
+        responseType: 'arraybuffer'
+      }
+    )
+    .then((response) => {
+      window.core.writeFileByArrayBuffer(file.fileName, response.data)
+    })
+}
+
+const fileList = ref([])
+
+function getFileList() {
+  server
+    .get('/file')
+    .then((response) => {
+      fileList.value = response.data.data.files
+    })
+    .catch(() => {
+      ElMessage('未知错误')
+    })
+}
+
+getFileList()
 
 const handleCommand = (command) => {
   sortedMethod.value = command.toString()

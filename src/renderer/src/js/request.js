@@ -2,14 +2,14 @@ import axios from 'axios'
 import router from '../router'
 import { ElMessage } from 'element-plus'
 
-// let server = axios.create({
-//   baseURL: 'http://119.23.244.10:9999'
-// })
-
 let server = axios.create({
-  baseURL: 'http://localhost:8080'
-  // timeout: 1000
+  baseURL: 'http://119.23.244.10:9999'
 })
+
+// let server = axios.create({
+//   baseURL: 'http://localhost:8080'
+//   // timeout: 1000
+// })
 
 export default server
 
