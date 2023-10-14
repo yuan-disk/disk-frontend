@@ -1,6 +1,6 @@
 <template>
   <el-container>
-    <el-header><h2 style="margin: 0px 0px 0px 0px">储存盘</h2></el-header>
+    <el-header><h2>储存盘</h2></el-header>
     <el-main>
       <el-row>
         <el-col :span="5">
@@ -37,6 +37,8 @@
         <el-checkbox v-for="city in allFolders" :key="city" :label="city">{{ city }}</el-checkbox>
       </el-checkbox-group>
       <upload />
+      <folder @click="ElMessage('clicked')" :key="city" :label="city" :file="file"></folder>
+      <folder @click="ElMessage('clicked')" :key="right" :label="right" :file="file2"></folder>
 
       <el-table :data="fileList" style="width: 100%">
         <el-table-column prop="fileName" label="filename" width="180" />
@@ -47,8 +49,6 @@
           </template>
         </el-table-column>
       </el-table>
-
-      <folder />
     </el-main>
   </el-container>
 </template>
@@ -67,6 +67,18 @@ const selectedFolders = ref([])
 const selectMessage = ref('共n项')
 const allFolders = ['Shanghai', 'Beijing', 'Guangzhou', 'Shenzhen']
 const sortedMethod = ref('')
+
+const file = {
+  name: '4小时学完概率论',
+  update_time: 1696852395918,
+  type: 'folder'
+}
+
+const file2 = {
+  name: '4小时学完概率论都是发士大夫士大夫撒旦开发士大夫士大夫凯撒的浪费',
+  update_time: 1696852395418,
+  type: 'file'
+}
 
 const downloadRow = (file) => {
   console.log(file)

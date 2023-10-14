@@ -1,70 +1,33 @@
-<template>
-  <el-container>
-    <el-header> 传输 </el-header>
-    <el-table :data="files_to_upload">
-      <el-table-column label="名称" prop="name"></el-table-column>
-      <el-table-column label="大小" prop="size"></el-table-column>
-      <el-table-column label="状态">
-        <template #default="scope"> </template>
-      </el-table-column>
-    </el-table>
-  </el-container>
-</template>
-
-<script setup>
-import { ref, onMounted, onBeforeMount } from 'vue'
-
-import server from '../../js/request'
-import mit from '../../js/event'
-
-import { ElMessage } from 'element-plus'
-
 const CHUNK_SIZE = 1024 * 1024 * 2
 const CUT_THREAD_COUNT = 8
 const UPLOAD_THREAD_COUNT = 8
 
 const MAX_TRY_COUNT = 8
 
-const progress = ref(0)
-const total = ref(0)
+export async function uploadFile(server, url, task, onTaskOver) {
+  return new Promise(async (resolve, error) => {
+    if (!task.chunked) {
+      task.chunks = await cutFile(task.file)
+      task.success_chunks = []
 
-const files_to_upload = ref([
-  {
-    name: 'index.html',
-    size: 84329,
-    status: 'waiting', // running | pause
-    download_bytes: 4327
-  }
-])
+      task.controller = new AbortController()
+      task.chunked = true
+    }
 
-function addUploadFile(file) {
-  if (files_to_upload.value.length === 0) {
-  }
-  console.log(file)
+    const success = await upload(server, url, task)
 
-  files_to_upload.value.push({
-    name: file.name,
-    size: file.size
+    if (success) {
+      console.log('upload over')
+      onTaskOver(task)
+      resolve()
+    } else {
+      error()
+    }
   })
-
-  ElMessage(file.name + ' added to filelist')
-  console.log(files_to_upload)
 }
 
-async function realUpload(file) {
-  var chunks = await cutFile(file)
-  console.log(chunks)
-
-  if (await upload(file, chunks)) {
-    console.log('upload over')
-    server.post('/file/merge/' + file.name)
-  } else {
-    ElMessage('upload fail')
-  }
-}
-
-async function upload(file, chunks) {
-  var index = chunks.length - 1
+async function upload(server, url, task) {
+  var index = task.chunks.length - 1
 
   function getIndex() {
     return index--
@@ -72,7 +35,7 @@ async function upload(file, chunks) {
 
   let proms = []
   for (let i = 0; i < UPLOAD_THREAD_COUNT; i++) {
-    proms.push(recursiveUpload(getIndex, file, chunks, -1))
+    proms.push(recursiveUpload(server, url, getIndex, task, -1))
   }
 
   for (let i = 0; i < proms.length; ++i) {
@@ -85,7 +48,7 @@ async function upload(file, chunks) {
   return true
 }
 
-function recursiveUpload(getIndex, file, chunks, error_index = -1, try_count = 0) {
+function recursiveUpload(server, url, getIndex, task, error_index = -1, try_count = 0) {
   return new Promise((resolve) => {
     let cur_index = error_index
     if (cur_index < 0) {
@@ -99,7 +62,9 @@ function recursiveUpload(getIndex, file, chunks, error_index = -1, try_count = 0
       return
     }
 
-    let chunk = chunks[cur_index]
+    let file = task.file
+
+    let chunk = task.chunks[cur_index]
     let chunk_size = chunk.end - chunk.start
     console.log('axios' + cur_index + ' with length' + chunk_size)
 
@@ -110,29 +75,39 @@ function recursiveUpload(getIndex, file, chunks, error_index = -1, try_count = 0
     let last_progress = 0
     form.append('fileName', filename)
     form.append('checkSum', chunk.hash)
-    form.append('chunkNum', String(cur_index))
+    form.append('chunkNum', cur_index)
     form.append('chunk', new File([slicee], filename))
-    form.append('totalChunkNum', chunks.length)
-    console.log(slicee)
+    form.append('totalChunkNum', task.chunks.length)
+
+    let progress = 0
+
     server
-      .post('/file', form, {
+      .post(url, form, {
+        signal: task.controller.signal,
+
         onUploadProgress: (e) => {
-          last_progress = e.loaded
-          if (e.loaded === e.total) {
-            progress.value += e.total
-          } else {
-            progress.value = progress.value - last_progress + e.loaded
+          const { loaded, total } = e
+
+          task.progress -= last_progress
+          last_progress = loaded
+
+          if (loaded < total) {
+            task.progress += last_progress
           }
         }
       })
       .then(async (response) => {
         console.log('axios', cur_index, 'over', response)
-        resolve(await recursiveUpload(getIndex, file, chunks))
+
+        task.progress += chunk_size
+        task.success_chunks.push(cur_index)
+
+        resolve(await recursiveUpload(server, url, getIndex, task))
       })
       .catch(async (error) => {
         console.log('axios', cur_index, 'error', error)
 
-        resolve(await recursiveUpload(getIndex, file, chunks, cur_index, try_count + 1))
+        resolve(await recursiveUpload(server, url, getIndex, task, cur_index, try_count + 1))
       })
   })
 }
@@ -179,13 +154,3 @@ function cutFile(file) {
     }
   })
 }
-
-onMounted(() => {
-  ElMessage('mounted')
-  mit.on('upload-file', addUploadFile)
-})
-
-onBeforeMount(() => {
-  mit.off('upload-file')
-})
-</script>

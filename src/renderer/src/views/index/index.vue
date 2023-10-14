@@ -1,5 +1,5 @@
 <template>
-  <el-container style="height: 100%">
+  <el-container class="container">
     <el-aside>
       <el-menu
         default-active="/"
@@ -7,31 +7,32 @@
         @open="handleOpen"
         @close="handleClose"
         router="true"
+        class="menu-fix"
       >
-        <el-menu-item class="menu-fix" index="/">
-          <el-icon><location /></el-icon>
+        <el-menu-item class="menu-item-fix" index="/">
+          <el-icon><House /></el-icon>
           <div class="menu-title-fix">文件</div>
         </el-menu-item>
 
-        <el-menu-item class="menu-fix" index="/index/share/">
-          <el-icon><icon-menu /></el-icon>
+        <el-menu-item class="menu-item-fix" index="/index/share/">
+          <el-icon><Connection /></el-icon>
           <div class="menu-title-fix">共享</div>
         </el-menu-item>
 
-        <el-menu-item class="menu-fix" index="/index/translate/">
-          <el-icon><document /></el-icon>
+        <el-menu-item class="menu-item-fix" index="/index/translate/">
+          <el-icon><sort /></el-icon>
           <div class="menu-title-fix">传输</div>
         </el-menu-item>
 
-        <el-menu-item class="spacer"> </el-menu-item>
+        <div class="spacer"></div>
 
-        <el-menu-item class="menu-fix" index="/index/settings">
+        <el-menu-item class="menu-item-fix" index="/index/settings">
           <el-icon><setting /></el-icon>
           <div class="menu-title-fix">设置</div>
         </el-menu-item>
 
-        <el-menu-item class="menu-fix" index="/login">
-          <el-icon><setting /></el-icon>
+        <el-menu-item class="menu-item-fix" index="/login">
+          <el-icon><right /></el-icon>
           <div class="menu-title-fix">登出</div>
         </el-menu-item>
       </el-menu>
@@ -45,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Document, Menu as IconMenu, Location, Setting } from '@element-plus/icons-vue'
+import { House, Connection, Right, Setting, Sort } from '@element-plus/icons-vue'
 
 const handleOpen = (key: string, keyPath: string[]) => {
   console.log(key, keyPath)
@@ -56,9 +57,20 @@ const handleClose = (key: string, keyPath: string[]) => {
 </script>
 
 <style scoped>
-.spacer {
-  flex: 1 1 auto;
+.menu-fix {
+  height: 95%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+.container {
+  height: 100%;
+  width: 100%;
+}
+.spacer {
+  flex-grow: 1;
+}
+
 .menu-title-fix {
   line-height: normal;
   display: block;
@@ -66,11 +78,13 @@ const handleClose = (key: string, keyPath: string[]) => {
   font-size: small;
 }
 
-.menu-fix {
+.menu-item-fix {
   margin-bottom: 5px;
   flex-direction: column;
   justify-content: center;
+  flex: 0, 0, auto;
 }
+
 .el-aside {
   width: var(--el-aside-width, 100);
 }

@@ -10,7 +10,7 @@
 import { ElMessage } from 'element-plus'
 import server from '../js/request.js'
 import { ref } from 'vue'
-import bus from '../js/event'
+import mit from '../js/event'
 
 const CHUNK_SIZE = 1024 * 1024 * 2
 const CUT_THREAD_COUNT = 8
@@ -23,7 +23,7 @@ const total = ref(0)
 
 async function updateFile(params) {
   let file = params.file
-  bus.emit('upload-file', file)
+  mit.emit('upload-file', file)
   total.value = file.size
   progress.value = 0
   var chunks = await cutFile(file)
