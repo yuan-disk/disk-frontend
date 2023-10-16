@@ -40,12 +40,15 @@ server.interceptors.response.use(
     return response
   },
   function (error) {
-    if (error.response.data.code === 403) {
-      window.store.del('token')
-      router.push({
-        path: '/login'
-      })
+    if (error.response) {
+      if (error.response.data.code === 403) {
+        window.store.del('token')
+        router.push({
+          path: '/login'
+        })
+      }
     }
+
     console.log(error)
     return Promise.reject(error)
   }

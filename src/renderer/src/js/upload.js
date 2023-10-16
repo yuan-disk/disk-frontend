@@ -30,6 +30,9 @@ async function upload(server, url, task) {
   var index = task.chunks.length - 1
 
   function getIndex() {
+    while (task.success_chunks.includes(index)) {
+      index--
+    }
     return index--
   }
 

@@ -46,10 +46,6 @@ class Uploader {
     }
   }
 
-  // cancel(task) {
-
-  // }
-
   setUploading(task) {
     task.task_status = 'uploading'
     this.running_tasks.push(task)

@@ -2,8 +2,6 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { error, log } from 'console'
-import { ElMessage } from 'element-plus'
 
 function createWindow() {
   // Create the browser window.
@@ -63,25 +61,23 @@ app.whenReady().then(() => {
   const Store = require('electron-store')
   var store = new Store()
 
-  ipcMain.on('setStore', (_, key, value) => {
+  ipcMain.on('store-set', (_, key, value) => {
     store.set(key, value)
   })
 
-  ipcMain.on('getStore', (_, key) => {
+  ipcMain.on('store-get', (_, key) => {
     let value = store.get(key)
     _.returnValue = value || ''
   })
 
-  ipcMain.on('delStore', (_, key) => {
+  ipcMain.on('store-del', (_, key) => {
     store.delete(key)
   })
 
   const fs = require('fs')
 
   ipcMain.on('writeFile', (_, filename, data) => {
-    fs.writeFile(filename, data, (err) => {
-      ElMessage('write error', err)
-    })
+    fs.appendFileSync(filename, data)
   })
 })
 

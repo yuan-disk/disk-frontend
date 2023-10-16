@@ -4,24 +4,29 @@ const { Buffer } = require('buffer')
 // Custom APIs for renderer
 const api = {}
 
-const electronHandler = {
+const store = {
   set: (key, value) => {
-    ipcRenderer.send('setStore', key, value)
+    ipcRenderer.send('store-set', key, value)
   },
 
   get(key) {
-    const resp = ipcRenderer.sendSync('getStore', key)
+    const resp = ipcRenderer.sendSync('store-get', key)
     return resp
   },
 
   del: (key) => {
-    ipcRenderer.send('delStore', key)
+    ipcRenderer.send('store-del', key)
   }
 }
 
-const coreHandler = {
-  writeFileByArrayBuffer: (filename, data) => {
-    ipcRenderer.send('writeFile', filename, Buffer.from(data))
+const fs = {
+  /**
+   *
+   * @param {string} filename
+   * @param {ArrayBuffer} ArrayBuffer
+   */
+  write: (filename, buffer) => {
+    ipcRenderer.send('fs-write', filename, Buffer.from(buffer))
   }
 }
 
@@ -31,14 +36,16 @@ const coreHandler = {
 
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('store', electronHandler)
+    contextBridge.exposeInMainWorld('store', store)
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
-    contextBridge.exposeInMainWorld('core', coreHandler)
+    contextBridge.exposeInMainWorld('fs', fs)
   } catch (error) {
     console.error(error)
   }
 } else {
   window.electron = electronAPI
   window.api = api
+  window.store = store
+  window.fs = fs
 }

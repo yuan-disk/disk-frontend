@@ -92,7 +92,7 @@ const downloadRow = (file) => {
       }
     )
     .then((response) => {
-      window.core.writeFileByArrayBuffer(file.fileName, response.data)
+      window.fs.write(file.fileName, response.data)
     })
 }
 
