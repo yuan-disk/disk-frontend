@@ -1,6 +1,6 @@
 <template>
   <el-container>
-    <el-header> <h2>共享盘</h2></el-header>
+    <el-header><h2>储存盘</h2></el-header>
     <el-main>
       <div class="flex-row">
         <el-checkbox
@@ -34,7 +34,12 @@
           ><el-icon><Grid /></el-icon
         ></el-button>
       </div>
-      <FileGrid style="padding: 0%" v-model:selectlist="selectlist" :filelist="filelist"></FileGrid>
+      <FileGrid
+        style="padding: 0%"
+        v-model:selectlist="selectlist"
+        :filelist="filelist"
+        @on-request="onUploadFile"
+      ></FileGrid>
     </el-main>
   </el-container>
 </template>
@@ -85,36 +90,24 @@
 import FileGrid from '../../components/FileGrid.vue'
 
 import { Sort, Grid, Operation } from '@element-plus/icons-vue'
-import { ref, watch } from 'vue'
+import { onActivated, ref, watch } from 'vue'
+import { getFileList } from '../../js/file_requests'
+import uploader from '../../js/uploader'
 
 const is_grid = ref(true)
 
 const select_allfiles = ref(false)
 const selectlist = ref([])
 
-const filelist = ref([
-  {
-    name: '4小时学完概率论',
-    update_time: 1696852395918,
-    type: 'file',
-    is_folder: 0,
-    path: '/'
-  },
-  {
-    name: '4小时学完概率论(2)',
-    update_time: 1696852395918,
-    type: 'folder',
-    path: '/',
-    is_folder: 1
-  },
-  {
-    name: '4小时学完概率论都是发士大夫士大夫撒旦开发士大夫士大夫凯撒的浪费',
-    update_time: 1696852395918,
-    type: 'folder',
-    path: '/',
-    is_folder: 1
-  }
-])
+const filelist = ref([])
+const basepath = ref('/')
+const pathid = ref(0)
+
+onActivated(async () => {
+  let response = await getFileList(basepath.value)
+  filelist.value = response.result
+  pathid.value = response.parentid
+})
 
 function checkDisplayMessage() {
   if (selectlist.value.length === 0) {
@@ -134,5 +127,9 @@ function selectAllfiles(val) {
 
 function is_indeterminate() {
   return selectlist.value.length > 0 && selectlist.value.length < filelist.value.length
+}
+
+function onUploadFile(file) {
+  uploader.commit(file, file.name, pathid.value)
 }
 </script>

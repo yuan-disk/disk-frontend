@@ -2,154 +2,134 @@
   <el-container>
     <el-header><h2>储存盘</h2></el-header>
     <el-main>
-      <el-row>
-        <el-col :span="5">
-          <el-checkbox
-            v-model="isSelectAll"
-            :indeterminate="notSelectAllFolders"
-            @change="handleCheckAllChange"
-            >{{ selectMessage }}</el-checkbox
-          >
-        </el-col>
-        <el-col :span="14"></el-col>
-        <el-col :span="3">
-          <el-dropdown @command="handleCommand" class="sort-fix">
-            <span class="el-dropdown-link sort-span-fix"
-              ><el-icon class="el-icon--right"><Sort /></el-icon> 按{{ sortedMethod }}排序
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="名称">名称</el-dropdown-item>
-                <el-dropdown-item command="创建时间">创建时间</el-dropdown-item>
-                <el-dropdown-item command="修改时间">修改时间</el-dropdown-item>
-                <el-dropdown-item command="文件大小">文件大小</el-dropdown-item>
-                <el-dropdown-item command="desc">升序</el-dropdown-item>
-                <el-dropdown-item command="asc">降序</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </el-col>
-
-        <el-col :span="2"> <el-button @click="getFileList">Refresh</el-button></el-col>
-      </el-row>
-
-      <el-checkbox-group v-model="selectedFolders" @change="handleCheckedCitiesChange">
-        <el-checkbox v-for="city in allFolders" :key="city" :label="city">{{ city }}</el-checkbox>
-      </el-checkbox-group>
-      <upload />
-      <folder @click="ElMessage('clicked')" :key="city" :label="city" :file="file"></folder>
-      <folder @click="ElMessage('clicked')" :key="right" :label="right" :file="file2"></folder>
-
-      <el-table :data="fileList" style="width: 100%">
-        <el-table-column prop="fileName" label="filename" width="180" />
-        <el-table-column prop="size" label="size" width="180" />
-        <el-table-column label="Operation">
-          <template #default="scope">
-            <el-button @click.prevent="downloadRow(scope.row)">下载</el-button>
+      <div class="flex-row">
+        <el-checkbox
+          v-model="select_allfiles"
+          :indeterminate="is_indeterminate()"
+          @change="selectAllfiles"
+          class="flex-keep"
+          >{{ checkDisplayMessage() }}</el-checkbox
+        >
+        <div class="expanding"></div>
+        <!-- <el-button class="flex-keep">按时间排序</el-button> -->
+        <el-dropdown @command="handleCommand" trigger="click" class="flex-keep">
+          <span class="el-dropdown-link">
+            <el-icon><Sort /></el-icon>
+            按时间排序
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="a">名称</el-dropdown-item>
+              <el-dropdown-item command="b">时间</el-dropdown-item>
+              <el-dropdown-item command="c">大小</el-dropdown-item>
+              <el-dropdown-item command="d" disabled>Action 4</el-dropdown-item>
+              <el-dropdown-item command="e" divided>Action 5</el-dropdown-item>
+            </el-dropdown-menu>
           </template>
-        </el-table-column>
-      </el-table>
+        </el-dropdown>
+        <el-button v-if="is_grid" @click="is_grid = false" class="flex-keep display-mode-btn"
+          ><el-icon><Operation /></el-icon
+        ></el-button>
+        <el-button v-if="!is_grid" @click="is_grid = true" class="flex-keep display-mode-btn"
+          ><el-icon><Grid /></el-icon
+        ></el-button>
+      </div>
+      <FileGrid
+        style="padding: 0%"
+        v-model:selectlist="selectlist"
+        :filelist="filelist"
+        @on-request="onUploadFile"
+      ></FileGrid>
     </el-main>
   </el-container>
 </template>
-<script setup>
-import { ref } from 'vue'
-import upload from '../../components/upload.vue'
-import folder from '../../components/folder.vue'
-
-import { ElMessage } from 'element-plus'
-import { Sort } from '@element-plus/icons-vue'
-import server from '../../js/request'
-
-const isSelectAll = ref(false)
-const notSelectAllFolders = ref(false)
-const selectedFolders = ref([])
-const selectMessage = ref('共n项')
-const allFolders = ['Shanghai', 'Beijing', 'Guangzhou', 'Shenzhen']
-const sortedMethod = ref('')
-
-const file = {
-  name: '4小时学完概率论',
-  update_time: 1696852395918,
-  type: 'folder'
-}
-
-const file2 = {
-  name: '4小时学完概率论都是发士大夫士大夫撒旦开发士大夫士大夫凯撒的浪费',
-  update_time: 1696852395418,
-  type: 'file'
-}
-
-const downloadRow = (file) => {
-  console.log(file)
-  ElMessage('开始下载' + file.fileName)
-  server
-    .post(
-      '/file/' + file.id,
-      { from: 0, to: file.chunks.length },
-      {
-        responseType: 'arraybuffer'
-      }
-    )
-    .then((response) => {
-      window.fs.write(file.fileName, response.data)
-    })
-}
-
-const fileList = ref([])
-
-function getFileList() {
-  server
-    .get('/file')
-    .then((response) => {
-      fileList.value = response.data.data.files
-    })
-    .catch(() => {
-      ElMessage('未知错误')
-    })
-}
-
-getFileList()
-
-const handleCommand = (command) => {
-  sortedMethod.value = command.toString()
-  ElMessage(`click on item ${command}`)
-}
-
-const handleCheckAllChange = (val) => {
-  selectedFolders.value = val ? allFolders : []
-  notSelectAllFolders.value = false
-
-  if (selectedFolders.value.length == 0) {
-    selectMessage.value = '共' + allFolders.length + '项'
-  } else {
-    selectMessage.value = '已选' + selectedFolders.value.length + '项'
-  }
-}
-
-const handleCheckedCitiesChange = (value) => {
-  const checkedCount = value.length
-  isSelectAll.value = checkedCount === allFolders.length
-  notSelectAllFolders.value = checkedCount > 0 && checkedCount < allFolders.length
-
-  if (selectedFolders.value.length == 0) {
-    selectMessage.value = '共' + allFolders.length + '项'
-  } else {
-    selectMessage.value = '已选' + selectedFolders.value.length + '项'
-  }
-}
-</script>
 
 <style scoped>
-.bottom-line {
-  border-bottom: 2px solid var(--el-border-color);
-}
-.sort-fix {
-  height: 32px;
-  margin-top: 0px;
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  width: 95%;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.sort-span-fix {
-  margin: auto;
+.expanding {
+  flex: 1 1 auto;
+}
+
+.flex-keep {
+  flex: 0 1 auto;
+}
+
+.example-showcase .el-dropdown-link {
+  cursor: pointer;
+  color: var(--el-color-primary);
+  display: flex;
+  align-items: center;
+}
+
+.el-dropdown {
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+
+.el-dropdown:hover {
+  background: rgb(245, 245, 246);
+}
+
+.display-mode-btn {
+  border: 0;
+}
+.display-mode-btn:hover {
+  background: rgb(245, 245, 246);
+  color: grey;
 }
 </style>
+
+<script setup>
+import FileGrid from '../../components/FileGrid.vue'
+
+import { Sort, Grid, Operation } from '@element-plus/icons-vue'
+import { onActivated, ref, watch } from 'vue'
+import { getFileList } from '../../js/file_requests'
+import uploader from '../../js/uploader'
+
+const is_grid = ref(true)
+
+const select_allfiles = ref(false)
+const selectlist = ref([])
+
+const filelist = ref([])
+const basepath = ref('/')
+const pathid = ref(0)
+
+onActivated(async () => {
+  let response = await getFileList(basepath.value)
+  filelist.value = response.result
+  pathid.value = response.parentid
+})
+
+function checkDisplayMessage() {
+  if (selectlist.value.length === 0) {
+    return '共' + filelist.value.length + '项'
+  } else {
+    return '已选' + selectlist.value.length + '项'
+  }
+}
+
+watch(selectlist, (val) => {
+  select_allfiles.value = val.length === filelist.value.length
+})
+
+function selectAllfiles(val) {
+  selectlist.value = val ? filelist.value : []
+}
+
+function is_indeterminate() {
+  return selectlist.value.length > 0 && selectlist.value.length < filelist.value.length
+}
+
+function onUploadFile(file) {
+  uploader.commit(file, file.name, pathid.value)
+}
+</script>

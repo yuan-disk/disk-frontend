@@ -67,7 +67,7 @@ app.whenReady().then(() => {
 
   ipcMain.on('store-get', (_, key) => {
     let value = store.get(key)
-    _.returnValue = value || ''
+    _.returnValue = value || void 0
   })
 
   ipcMain.on('store-del', (_, key) => {
@@ -76,8 +76,19 @@ app.whenReady().then(() => {
 
   const fs = require('fs')
 
-  ipcMain.on('writeFile', (_, filename, data) => {
-    fs.appendFileSync(filename, data)
+  ipcMain.on('fs-write', (_, filename, data) => {
+    console.log(filename, data)
+    fs.writeFileSync(filename, data)
+  })
+
+  ipcMain.on('fs-read', (event, filepath) => {
+    console.log(filepath)
+    if (fs.statSync(filepath).isFile()) {
+      let data = fs.readFileSync(filepath)
+      event.returnValue = data
+    } else {
+      event.returnValue = void 0
+    }
   })
 })
 

@@ -1,10 +1,15 @@
 import axios from 'axios'
 import router from '../router'
 import { ElMessage } from 'element-plus'
+import net_status from './status_code'
 
 let server = axios.create({
-  baseURL: 'http://119.23.244.10:9999'
+  baseURL: 'http://119.23.244.10:8080'
 })
+
+// let server = axios.create({
+//   baseURL: 'http://192.168.1.100:8080'
+// })
 
 // let server = axios.create({
 //   baseURL: 'http://localhost:8080'
@@ -29,7 +34,11 @@ server.interceptors.request.use(
 
 server.interceptors.response.use(
   function (response) {
-    if (response.data.code === 403 || response.data.code === 301) {
+    console.log('lanjie', response)
+    if (
+      response.data.code === net_status.token_expired ||
+      response.data.code === net_status.token_required
+    ) {
       window.store.del('token')
       router.push({
         path: '/login'
@@ -39,17 +48,7 @@ server.interceptors.response.use(
     }
     return response
   },
-  function (error) {
-    if (error.response) {
-      if (error.response.data.code === 403) {
-        window.store.del('token')
-        router.push({
-          path: '/login'
-        })
-      }
-    }
-
+  (error) => {
     console.log(error)
-    return Promise.reject(error)
   }
 )

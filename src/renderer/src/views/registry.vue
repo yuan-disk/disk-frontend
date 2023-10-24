@@ -30,6 +30,7 @@ import { reactive, ref } from 'vue'
 import router from '../router/index.js'
 import { ElMessage } from 'element-plus'
 import server from '../js/request'
+import net_status from '../js/status_code'
 
 const registerRef = reactive()
 
@@ -71,7 +72,7 @@ const submitForm = async (formEl) => {
       server
         .post('/user/register', registerForm)
         .then((response) => {
-          if (response.data.code === 200) {
+          if (response.data.code === net_status.success) {
             ElMessage('注册成功')
             router.push({
               path: '/login'

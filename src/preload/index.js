@@ -14,6 +14,47 @@ const store = {
     return resp
   },
 
+  add(key, value) {
+    let list = store.get(key)
+    if (list) {
+      list.push(value)
+      store.set(key, list)
+    } else {
+      store.set(key, [value])
+    }
+  },
+
+  remove(key, value) {
+    let list = store.get(key)
+    console.log(list, value)
+    if (list) {
+      let index = store.findIndex(list, value)
+      console.log(index)
+      if (index >= 0) {
+        list.splice(index, 1)
+        store.set(key, list)
+      }
+    }
+  },
+
+  findIndex(list, value) {
+    for (let i = 0; i < list.length; ++i) {
+      if (store.areObjectsEqual(list[i], value)) {
+        return i
+      }
+    }
+    return -1
+  },
+
+  areObjectsEqual(objA, objB) {
+    for (const key in objA) {
+      if (objA[key] !== objB[key]) {
+        return false
+      }
+    }
+    return true
+  },
+
   del: (key) => {
     ipcRenderer.send('store-del', key)
   }
@@ -27,6 +68,22 @@ const fs = {
    */
   write: (filename, buffer) => {
     ipcRenderer.send('fs-write', filename, Buffer.from(buffer))
+  },
+
+  /**
+   *
+   * @param {string} fullpath
+   * @returns {ArrayBuffer}
+   */
+  getFile: (fullpath, filename, lastModified) => {
+    let data = ipcRenderer.sendSync('fs-read', fullpath)
+    if (data) {
+      return new File([data], filename, {
+        lastModified: lastModified,
+        path: fullpath
+      })
+    }
+    return void 0
   }
 }
 

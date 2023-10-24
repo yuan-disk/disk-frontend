@@ -6,7 +6,7 @@
         :collapse="true"
         @open="handleOpen"
         @close="handleClose"
-        router="true"
+        :router="true"
         class="menu-fix"
       >
         <el-menu-item class="menu-item-fix" index="/">

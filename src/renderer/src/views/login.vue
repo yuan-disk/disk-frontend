@@ -29,6 +29,7 @@ import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
 import router from '../router/index.js'
 import server from '../js/request'
+import net_status from '../js/status_code'
 
 const loginFormRef = reactive()
 
@@ -55,7 +56,7 @@ const submitForm = async (formEl) => {
       server
         .post('/user/login', loginForm)
         .then((response) => {
-          if (response.data.code === 200) {
+          if (response.data.code === net_status.success) {
             window.store.set('token', response.data.data.token)
             router.push({
               path: '/'

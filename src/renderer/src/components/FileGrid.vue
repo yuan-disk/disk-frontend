@@ -1,13 +1,15 @@
 <template>
-  <div>
+  <div @mousedown="handleMouseDown" @mousemove="handleMouseMove" @mouseup="handleMouseUp">
     <ul class="file-grid">
       <li class="file-item" v-for="file in props.filelist">
         <folder
           :selected="isSelect(file)"
           :file="file"
+          :data-file="file"
           @change="OnFolderSelectChange"
           @dblclick="OnDbClickFile(file)"
           @contextmenu="OnOpenContextMenu(file)"
+          class="selector_find"
         ></folder>
       </li>
 
@@ -32,6 +34,7 @@ import { ElMessage, ElNotification } from 'element-plus'
 import mit from '../js/event'
 import { Plus } from '@element-plus/icons-vue'
 import uploader from '../js/uploader'
+import server from '../js/request'
 
 const props = defineProps({
   selectlist: Array,
@@ -39,7 +42,7 @@ const props = defineProps({
   sort: Function
 })
 
-const emit = defineEmits(['selected-change', 'update:selectlist'])
+const emit = defineEmits(['selected-change', 'update:selectlist', 'on-request'])
 
 function isSelect(file) {
   return props.selectlist.indexOf(file) != -1
@@ -59,9 +62,9 @@ function OnFolderSelectChange(file, event) {
 }
 
 function updateFile(fileholder) {
-  // mit.emit('upload-file', file.file)
   let file = fileholder.file
-  uploader.commit(file)
+
+  emit('on-request', file)
 
   var notification = ElNotification.success({
     title: file.name + '成功添加到上传队列'
@@ -73,6 +76,24 @@ function updateFile(fileholder) {
 }
 
 function OnDbClickFile(file) {
+  //TODO:
+  console.log(file)
+  server
+    .post(
+      '/file/' + file.id,
+      {
+        from: 0,
+        to: file.chunknum
+      },
+      {
+        responseType: 'arraybuffer'
+      }
+    )
+    .then((response) => {
+      console.log(response.data)
+      window.fs.write(file.name, response.data)
+    })
+
   if (file.is_folder) {
     ElMessage('getfilelist' + file.path + file.name)
     mit.emit('getfilelist', file.path + file.name)
@@ -82,6 +103,46 @@ function OnDbClickFile(file) {
 
 function OnOpenContextMenu(file) {
   ElMessage('opencontextmenu' + file.name)
+}
+
+let isSelecting = false
+let startX = false
+let startY = false
+let endX = false
+let endY = false
+
+function handleMouseDown(event) {
+  isSelecting = true
+  startX = event.clientX
+  startY = event.clientY
+  endX = event.clientX
+  endY = event.clientY
+}
+
+function handleMouseMove(event) {
+  if (isSelecting) {
+    endX = event.clientX
+    endY = event.clientY
+  }
+}
+function handleMouseUp() {
+  isSelecting = false
+  emit('update:selectlist', findSelectedItems())
+}
+function findSelectedItems() {
+  const selected = []
+  const elements = document.querySelectorAll('.selector_find')
+  for (const element of elements) {
+    const rect = element.getBoundingClientRect()
+    if (rect.left < endX && rect.right > startX && rect.top < endY && rect.bottom > startY) {
+      const file = element.getAttribute('data-file')
+      selected.push(file)
+    }
+  }
+  return selected
+}
+function clearSelection() {
+  selectedItems = []
 }
 </script>
 

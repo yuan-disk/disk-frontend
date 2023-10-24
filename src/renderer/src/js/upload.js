@@ -1,11 +1,35 @@
+import net_status from './status_code'
+import server from './request'
+
 const CHUNK_SIZE = 1024 * 1024 * 2
 const CUT_THREAD_COUNT = 8
 const UPLOAD_THREAD_COUNT = 8
 
 const MAX_TRY_COUNT = 8
 
-export async function uploadFile(server, url, task, onTaskOver) {
-  return new Promise(async (resolve, error) => {
+async function precheck(task) {
+  let precheck_data = {
+    keys: [],
+    filename: task.file.name,
+    fileSize: task.file.size,
+    parentId: task.parentid
+  }
+
+  task.chunks.forEach((element) => {
+    precheck_data.keys.push(element.hash)
+  })
+
+  let response = await server.post('/file/precheck', precheck_data)
+
+  if (response.data && response.data.data.code === net_status.success) {
+    task.success_chunks = response.data.data.uploaded
+  }
+
+  return response.data.code
+}
+
+export async function uploadFile(server, url, task) {
+  return new Promise(async (resolve, reject) => {
     if (!task.chunked) {
       task.chunks = await cutFile(task.file)
       task.success_chunks = []
@@ -14,14 +38,31 @@ export async function uploadFile(server, url, task, onTaskOver) {
       task.chunked = true
     }
 
-    const success = await upload(server, url, task)
+    if (task.task_status == 'paused') {
+      reject()
+      return
+    }
 
-    if (success) {
-      console.log('upload over')
-      onTaskOver(task)
-      resolve()
-    } else {
-      error()
+    while (true) {
+      let code = await precheck(task)
+
+      if (code === net_status.file_uploaded) {
+        resolve()
+        return
+      } else if (code !== net_status.success) {
+        reject()
+        return
+      }
+
+      let success = await upload(server, url, task)
+
+      if (success) {
+        resolve()
+      } else {
+        reject()
+      }
+
+      return
     }
   })
 }
@@ -43,12 +84,12 @@ async function upload(server, url, task) {
 
   for (let i = 0; i < proms.length; ++i) {
     let success = await proms[i]
-    if (!success) {
-      return false
+    if (success) {
+      return true
     }
   }
 
-  return true
+  return false
 }
 
 function recursiveUpload(server, url, getIndex, task, error_index = -1, try_count = 0) {
@@ -75,14 +116,11 @@ function recursiveUpload(server, url, getIndex, task, error_index = -1, try_coun
     let filename = file.name
     let form = new FormData()
 
-    let last_progress = 0
     form.append('fileName', filename)
     form.append('checkSum', chunk.hash)
-    form.append('chunkNum', cur_index)
     form.append('chunk', new File([slicee], filename))
-    form.append('totalChunkNum', task.chunks.length)
 
-    let progress = 0
+    let last_progress = 0
 
     server
       .post(url, form, {
@@ -90,7 +128,7 @@ function recursiveUpload(server, url, getIndex, task, error_index = -1, try_coun
 
         onUploadProgress: (e) => {
           const { loaded, total } = e
-
+          console.log(e, Date.now())
           task.progress -= last_progress
           last_progress = loaded
 
@@ -104,6 +142,11 @@ function recursiveUpload(server, url, getIndex, task, error_index = -1, try_coun
 
         task.progress += chunk_size
         task.success_chunks.push(cur_index)
+
+        if (response.data.data.code === net_status.file_upload_over) {
+          resolve(true)
+          return
+        }
 
         resolve(await recursiveUpload(server, url, getIndex, task))
       })

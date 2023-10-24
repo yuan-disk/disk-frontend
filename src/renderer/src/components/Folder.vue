@@ -32,7 +32,8 @@ function getImgUrl(filetype) {
 }
 
 function timestampFormat(timestamp) {
-  const date = new Date(timestamp)
+  const date = new Date(Number(timestamp))
+  console.log(date)
   //example 03/07 17:20
   return (
     (date.getMonth() + 1).toString().padStart(2, '0') +
